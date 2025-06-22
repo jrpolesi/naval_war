@@ -33,10 +33,23 @@ func NewHandler() http.Handler {
 		connID := poolOfConnections.AddConnection(conn)
 
 		defer func() {
-			poolOfConnections.DeleteConnection(connID)
-			conn.Close()
+			err := closeConnection(poolOfConnections, conn, connID)
+			if err != nil {
+				fmt.Println("Error closing connection:", err)
+			}
 			fmt.Println("WebSocket connection closed")
 		}()
+
+		err = gameMaster.AddNewPlayerToGame(connID)
+		if err != nil {
+			fmt.Println("Error adding new player to game:", err)
+			closeErr := closeConnection(poolOfConnections, conn, connID)
+
+			if closeErr != nil {
+				fmt.Println("Error closing connection after adding new player:", closeErr)
+			}
+			return
+		}
 
 		fmt.Println("WebSocket connection established")
 
@@ -50,4 +63,10 @@ func NewHandler() http.Handler {
 			eventHandler.HandleEvent(connID, msg)
 		}
 	})
+}
+
+func closeConnection(pool connection.Pool, conn *websocket.Conn, connID string) error {
+	pool.DeleteConnection(connID)
+
+	return conn.Close()
 }

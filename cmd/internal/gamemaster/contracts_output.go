@@ -1,6 +1,6 @@
 package gamemaster
 
-type Map struct {
+type GameMap struct {
 	/*
 	 [width, height]
 	*/
@@ -12,7 +12,7 @@ type GameResult struct {
 }
 
 type GameResponse struct {
-	Map          *Map        `json:"map,omitempty"`
+	Map          *GameMap    `json:"map,omitempty"`
 	Teams        *[]Team     `json:"teams,omitempty"`
 	Ships        *[]Ship     `json:"ships,omitempty"`
 	DamagedShips *[]Ship     `json:"damaged_ships,omitempty"`

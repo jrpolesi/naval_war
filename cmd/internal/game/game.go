@@ -2,50 +2,102 @@ package game
 
 import (
 	"errors"
-	"log"
+)
+
+const (
+	max_teams  = 2
+	min_teams  = 2
+	map_size_x = 10
+	map_size_y = 10
 )
 
 type Game interface {
+	AddNewPlayer(connID string, playerName string) (Player, error)
 	SetPlayerInfo(player Player) error
-	SetShipDamager(shipId, playerId string) error
-	GetTeams() []Team
+	GetTeams() []*Team
+	GetPlayers() []*Player
+	GetGameMap() GameMap
 	IsAllUsersReady() bool
-	GetShipAtPos(coord Coordinate) (Ship, error)
+	IsFull() bool
 }
 
 type game struct {
-	teams        []Team
-	Players      []Player
-	currentRound CurrentRound
-	Map          Map
+	teams   []*Team
+	players []*Player
+	// currentRound CurrentRound
+	gameMap GameMap
 }
 
 func New() Game {
-	return &game{}
-}
-
-func (g *game) findPlayerById(playerId string) (*Player, error) {
-	for _, player := range g.Players {
-		if player.ID == playerId {
-			return &player, nil
-		}
+	teams := make([]*Team, max_teams)
+	for i := range max_teams {
+		team := newTeam()
+		teams[i] = &team
 	}
 
-	return nil, errors.New("Player not found")
-}
+	gameMap := newGameMap(map_size_x, map_size_y)
 
-func (g *game) findShipById(shipId string) (*Ship, error) {
-	for _, ship := range g.Map.Ships {
-		if ship.ID == shipId {
-			return ship, nil
-		}
+	return &game{
+		teams:   teams,
+		gameMap: gameMap,
 	}
-
-	return nil, errors.New("Ship not found")
 }
 
-func (g game) GetTeams() []Team {
+func (g *game) GetTeams() []*Team {
 	return g.teams
+}
+
+func (g *game) getTeamsWithAvailableSpace() []*Team {
+	teamsWithAvailableSpace := make([]*Team, 0, max_teams)
+
+	for _, team := range g.teams {
+		if !team.isFull() {
+			teamsWithAvailableSpace = append(teamsWithAvailableSpace, team)
+		}
+	}
+
+	return teamsWithAvailableSpace
+}
+
+func (g *game) getTeamsWithPlayers() []*Team {
+	teamsWithPlayers := make([]*Team, 0, max_teams)
+
+	for _, team := range g.teams {
+		if len(team.Players) > 0 {
+			teamsWithPlayers = append(teamsWithPlayers, team)
+		}
+	}
+
+	return teamsWithPlayers
+}
+
+func (g *game) GetPlayers() []*Player {
+	return g.players
+}
+
+func (g *game) AddNewPlayer(connID string, playerName string) (Player, error) {
+	teamsWithAvailableSpace := g.getTeamsWithAvailableSpace()
+
+	if len(teamsWithAvailableSpace) == 0 {
+		return Player{}, errors.New("no available teams for new player")
+	}
+
+	newPlayer := newPlayer(connID, playerName)
+	for range max_ships_per_player {
+		shipPosition := newRandomCoordinate(g.gameMap.Size[0], g.gameMap.Size[1])
+		ship := newShip(shipPosition)
+
+		newPlayer.AddShip(&ship)
+		g.gameMap.AddShip(&ship)
+	}
+
+	g.addPlayerToGameAndTeam(teamsWithAvailableSpace[0], &newPlayer)
+	return newPlayer, nil
+}
+
+func (g *game) addPlayerToGameAndTeam(team *Team, player *Player) {
+	g.players = append(g.players, player)
+	team.AddPlayer(player)
 }
 
 func (g *game) SetPlayerInfo(player Player) error {
@@ -57,36 +109,41 @@ func (g *game) SetPlayerInfo(player Player) error {
 	foundPlayer.Name = player.Name
 	foundPlayer.IsReady = player.IsReady
 
-	log.Printf("teams: %+v", g)
 	return nil
 }
 
-func (g *game) SetShipDamager(shipId, playerId string) error {
-	ship, err := g.findShipById(shipId)
-	if err != nil {
-		return err
+func (g *game) findPlayerById(playerId string) (*Player, error) {
+	for _, player := range g.players {
+		if player.ID == playerId {
+			return player, nil
+		}
 	}
 
-	player, err := g.findPlayerById(playerId)
-	if err != nil {
-		return err
-	}
-
-	ship.DamagedBy = player
-
-	return nil
+	return nil, errors.New("Player not found")
 }
 
-func (g *game) GetShipAtPos(coord Coordinate) (Ship, error) {
-	// g.
-	return Ship{}, nil
+func (g *game) GetGameMap() GameMap {
+	return g.gameMap
 }
 
 func (g *game) IsAllUsersReady() bool {
-	for _, player := range g.Players {
-		if !player.IsReady {
-			return false
+	teams := g.getTeamsWithPlayers()
+
+	if len(teams) < min_teams {
+		return false
+	}
+
+	for _, team := range teams {
+		for _, player := range team.Players {
+			if !player.IsReady {
+				return false
+			}
 		}
 	}
 	return true
+}
+
+func (g *game) IsFull() bool {
+	teamsWithAvailableSpace := g.getTeamsWithAvailableSpace()
+	return len(teamsWithAvailableSpace) == 0
 }

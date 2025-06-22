@@ -17,6 +17,7 @@ type Coordinate struct {
 }
 
 type Ship struct {
+	ID        string     `json:"id"`
 	Position  Coordinate `json:"position"`
 	IsDamaged bool       `json:"is_damaged"`
 	DamagedBy *Player    `json:"damaged_by,omitempty"`

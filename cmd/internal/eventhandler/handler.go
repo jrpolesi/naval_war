@@ -67,5 +67,5 @@ func (h eventHandler) updatePlayerInfo(connID string, msg events.Message) error 
 
 	playerIntent.ID = connID
 
-	return h.gameMaster.UpdatePlayerInfo(playerIntent)
+	return h.gameMaster.UpdatePlayerInfo(connID, playerIntent)
 }

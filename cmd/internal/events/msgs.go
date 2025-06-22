@@ -14,6 +14,7 @@ var Client = clientEvents{
 
 type serverEvents struct {
 	UnknownEvent       Event
+	CreatedNewPlayer   Event
 	UpdatedPlayersInfo Event
 	GameStarted        Event
 	GameUpdated        Event
@@ -22,6 +23,7 @@ type serverEvents struct {
 
 var Server = serverEvents{
 	UnknownEvent:       "server_unknown_event",
+	CreatedNewPlayer:   "server_created_new_player",
 	UpdatedPlayersInfo: "server_updated_players_info",
 	GameStarted:        "server_game_started",
 	GameUpdated:        "server_game_updated",
@@ -29,6 +31,13 @@ var Server = serverEvents{
 }
 
 type Message struct {
-	Event   Event          `json:"event"`
-	Payload any `json:"payload"`
+	Event   Event `json:"event"`
+	Payload any   `json:"payload"`
+}
+
+func NewMessage(event Event, payload any) Message {
+	return Message{
+		Event:   event,
+		Payload: payload,
+	}
 }

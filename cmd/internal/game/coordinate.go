@@ -7,6 +7,13 @@ type Coordinate struct {
 	Y int
 }
 
+func NewCoordinate(x, y int) Coordinate {
+	return Coordinate{
+		X: x,
+		Y: y,
+	}
+}
+
 func newRandomCoordinate(maxX, maxY int) Coordinate {
 	return Coordinate{
 		X: rand.IntN(maxX),

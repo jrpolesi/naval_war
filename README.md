@@ -132,3 +132,20 @@ Fluxo de mensagens
   }
 }
 ```
+
+5º
+
+```json
+{
+  "event": "client_player_performed_action",
+  "payload": {
+    "type": "attack",
+    "payload": {
+      "position": {
+        "x": 8,
+        "y": 4
+      }
+    }
+  }
+}
+```

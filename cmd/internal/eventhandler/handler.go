@@ -32,6 +32,8 @@ func (h eventHandler) HandleEvent(connID string, msg events.Message) error {
 	switch msg.Event {
 	case events.Client.UpdatedPlayerInfo:
 		return h.updatePlayerInfo(connID, msg)
+	case events.Client.PlayerPerformedAction:
+		return h.performPlayerAction(connID, msg)
 	default:
 		return h.unknownEvent(connID, msg)
 	}
@@ -68,4 +70,20 @@ func (h eventHandler) updatePlayerInfo(connID string, msg events.Message) error 
 	playerIntent.ID = connID
 
 	return h.gameMaster.UpdatePlayerInfo(connID, playerIntent)
+}
+
+func (h eventHandler) performPlayerAction(connID string, msg events.Message) error {
+	payloadBytes, err := json.Marshal(msg.Payload)
+	if err != nil {
+		log.Printf("Error marshalling payload: %v", err)
+		return nil
+	}
+
+	var actionPlayerIntent gamemaster.PerformPlayerActionIntent
+	if err := json.Unmarshal(payloadBytes, &actionPlayerIntent); err != nil {
+		log.Printf("Error unmarshalling player intent: %v", err)
+		return nil
+	}
+
+	return h.gameMaster.PerformPlayerAction(connID, actionPlayerIntent)
 }

@@ -2,6 +2,8 @@ package game
 
 import (
 	"errors"
+	"log"
+	"slices"
 )
 
 const (
@@ -19,12 +21,13 @@ type Game interface {
 	GetGameMap() GameMap
 	IsAllUsersReady() bool
 	IsFull() bool
+	Attack(attackerID string, targetPosition Coordinate) error
+	IsFinished() bool
 }
 
 type game struct {
 	teams   []*Team
 	players []*Player
-	// currentRound CurrentRound
 	gameMap GameMap
 }
 
@@ -87,12 +90,26 @@ func (g *game) AddNewPlayer(connID string, playerName string) (Player, error) {
 		shipPosition := newRandomCoordinate(g.gameMap.Size[0], g.gameMap.Size[1])
 		ship := newShip(shipPosition)
 
-		newPlayer.AddShip(&ship)
-		g.gameMap.AddShip(&ship)
+		err := g.addShipToPlayerAndMap(&newPlayer, &ship)
+		if err != nil {
+			log.Println("Error adding ship to player and map:", err)
+		}
 	}
 
 	g.addPlayerToGameAndTeam(teamsWithAvailableSpace[0], &newPlayer)
 	return newPlayer, nil
+}
+
+func (g *game) addShipToPlayerAndMap(player *Player, ship *Ship) error {
+	if err := player.AddShip(ship); err != nil {
+		return err
+	}
+
+	if err := g.gameMap.AddShip(ship); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (g *game) addPlayerToGameAndTeam(team *Team, player *Player) {
@@ -110,16 +127,6 @@ func (g *game) SetPlayerInfo(player Player) error {
 	foundPlayer.IsReady = player.IsReady
 
 	return nil
-}
-
-func (g *game) findPlayerById(playerId string) (*Player, error) {
-	for _, player := range g.players {
-		if player.ID == playerId {
-			return player, nil
-		}
-	}
-
-	return nil, errors.New("Player not found")
 }
 
 func (g *game) GetGameMap() GameMap {
@@ -146,4 +153,84 @@ func (g *game) IsAllUsersReady() bool {
 func (g *game) IsFull() bool {
 	teamsWithAvailableSpace := g.getTeamsWithAvailableSpace()
 	return len(teamsWithAvailableSpace) == 0
+}
+
+func (g *game) Attack(attackerID string, targetPosition Coordinate) error {
+	ship := g.findEnemyShipByCoordinate(attackerID, targetPosition)
+	if ship == nil {
+		return nil
+	}
+
+	player, err := g.findPlayerById(attackerID)
+	if err != nil {
+		return err
+	}
+
+	ship.DamagedBy = player
+
+	return nil
+}
+
+func (g *game) findEnemyShipByCoordinate(attackerID string, coord Coordinate) *Ship {
+	teammateShipsIDs := g.getTeammateShipIDsByPlayerId(attackerID)
+
+	for _, ship := range g.gameMap.Ships {
+		isFound := coord.X == ship.Position.X && ship.Position.Y == coord.Y
+		isEnemyShip := !slices.Contains(teammateShipsIDs, ship.ID)
+
+		if isFound && isEnemyShip {
+			return ship
+		}
+	}
+
+	return nil
+}
+
+func (g *game) getTeammateShipIDsByPlayerId(playerId string) []string {
+	foundShips := make([]*Ship, 0)
+
+	for _, team := range g.teams {
+		for _, player := range team.Players {
+			if player.ID == playerId {
+				foundShips = append(foundShips, player.Ships...)
+			}
+		}
+	}
+
+	teammateShipsIDs := make([]string, 0, len(foundShips))
+	for i, ship := range foundShips {
+		teammateShipsIDs[i] = ship.ID
+	}
+
+	return teammateShipsIDs
+}
+
+func (g *game) findPlayerById(playerId string) (*Player, error) {
+	for _, player := range g.players {
+		if player.ID == playerId {
+			return player, nil
+		}
+	}
+
+	return nil, errors.New("Player not found")
+}
+
+func (g *game) IsFinished() bool {
+	teams := g.GetTeams()
+	for _, team := range teams {
+		ships := team.GetShips()
+		damagedCount := 0
+
+		for _, ship := range ships {
+			if !ship.IsDamaged() {
+				damagedCount++
+			}
+		}
+
+		if len(ships) == damagedCount {
+			return true
+		}
+	}
+
+	return false
 }

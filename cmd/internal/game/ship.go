@@ -14,3 +14,7 @@ func newShip(position Coordinate) Ship {
 		Position: position,
 	}
 }
+
+func (s *Ship) IsDamaged() bool {
+	return s.DamagedBy != nil
+}

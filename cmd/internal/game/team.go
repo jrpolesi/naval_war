@@ -23,3 +23,11 @@ func (t *Team) AddPlayer(player *Player) {
 func (t *Team) isFull() bool {
 	return len(t.Players) >= max_players_per_team
 }
+
+func (t *Team) GetShips() []*Ship {
+	ships := make([]*Ship, 0)
+	for _, player := range t.Players {
+		ships = append(ships, player.Ships...)
+	}
+	return ships
+}

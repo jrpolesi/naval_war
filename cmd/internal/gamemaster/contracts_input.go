@@ -8,5 +8,6 @@ type AttackPlayerActionIntent struct {
 
 type PerformPlayerActionIntent struct {
 	ActionType string                   `json:"type"`
+	PlayerID   string                   `json:"-"`
 	Payload    AttackPlayerActionIntent `json:"payload"`
 }

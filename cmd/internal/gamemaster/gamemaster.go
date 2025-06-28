@@ -62,7 +62,7 @@ func (gm *gameMaster) UpdatePlayerInfo(connID string, playerInfo UpdatePlayerInt
 		return nil
 	}
 
-	gm.notifyGameReady(connID)
+	gm.notifyGameReadyToAll()
 	return nil
 }
 
@@ -98,13 +98,16 @@ func (gm *gameMaster) notifyUsersUpdate(updatedTeams []*game.Team) {
 	)
 }
 
-func (gm *gameMaster) notifyGameReady(connId string) {
-	gm.connections.SendMessageToAll(
-		events.NewMessage(
-			events.Server.GameStarted,
-			gm.getGameState(connId),
-		),
-	)
+func (gm *gameMaster) notifyGameReadyToAll() {
+	for _, connID := range gm.connections.GetConnectionsIDs() {
+		gm.connections.SendMessage(
+			connID,
+			events.NewMessage(
+				events.Server.GameStarted,
+				gm.getGameState(connID),
+			),
+		)
+	}
 }
 
 func (gm *gameMaster) getGameState(currPlayerID string) GameResponse {

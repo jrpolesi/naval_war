@@ -7,6 +7,9 @@ são mesagens que o cliente envia para o servidor
 prefixo "server\_"
 são mensagens que o servidor envia para o cliente
 
+Endpoint de conexão WebSocket
+`ws://localhost:8080/websocket`
+
 Fluxo de mensagens
 
 1º
@@ -28,7 +31,6 @@ Fluxo de mensagens
 {
   "event": "client_updated_player_info",
   "payload": {
-    "id": "9cf454bd-546a-488d-bbf4-07fe4787aa9f",
     "name": "My Name",
     "is_ready": false
   }

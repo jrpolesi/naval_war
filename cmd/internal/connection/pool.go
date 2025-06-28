@@ -21,12 +21,24 @@ type Pool interface {
 	DeleteConnection(id string)
 	SendMessageToAll(message events.Message)
 	SendMessage(id string, message events.Message)
+	GetConnectionsIDs() []string 
 }
 
 func NewPool() Pool {
 	return &pool{
 		connections: make(connections),
 	}
+}
+
+func (p *pool) GetConnectionsIDs() []string {
+	p.connMutex.Lock()
+	defer p.connMutex.Unlock()
+
+	ids := make([]string, 0, len(p.connections))
+	for id := range p.connections {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 func (p *pool) AddConnection(conn *websocket.Conn) string {

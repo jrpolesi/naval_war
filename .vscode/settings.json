@@ -4,5 +4,6 @@
     "gamemaster",
     "upgrader",
     "uuid"
-  ]
+  ],
+  "excalidraw.theme": "dark"
 }
